@@ -2,11 +2,12 @@
 #include <stdio.h>
 
 #define ID_URL_BAR 1
+#define WIN_MAIN_URL_LENGTH 512
 
 // Subclass procedure for the URL bar to intercept the Enter key
 LRESULT CALLBACK URLBarProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (uMsg == WM_KEYDOWN && wParam == VK_RETURN) {
-        char url[256];
+        char url[WIN_MAIN_URL_LENGTH];
         GetWindowText(hwnd, url, sizeof(url));
         printf("Loading URL: %s\n", url);  // Replace with actual loading logic
         return 0;  // Prevent further processing (avoids beep)
@@ -19,6 +20,16 @@ HBRUSH hBrush, hBgBrush;
 HFONT hFont;
 
 #define WIN_MAIN_BASEBAR_HEIGHT 45
+#define WIN_MAIN_URLBAR_HEIGHT 25
+#define WIN_MAIN_URLBAR_INIT_WIDTH 600
+#define WIN_MAIN_INIT_WIDTH 800
+#define WIN_MAIN_URLBAR_PADDING_X 10
+#define WIN_MAIN_URLBAR_PADDING_Y 25
+
+#define WIN_MAIN_GRAY RGB(240, 240, 240)
+#define WIN_MAIN_WHITE RGB(255, 255, 255)
+
+#define WIN_MAIN_URL_FONT_CHEIGHT 16
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static HWND urlBar;
@@ -29,7 +40,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             urlBar = CreateWindowEx(
                 0, "EDIT", "",
                 WS_CHILD | WS_VISIBLE | WS_BORDER | WS_EX_CLIENTEDGE | ES_LEFT | ES_AUTOHSCROLL,
-                0, 10, 600, 25, hwnd, (HMENU)ID_URL_BAR, NULL, NULL
+                0, WIN_MAIN_URLBAR_PADDING_X, WIN_MAIN_URLBAR_INIT_WIDTH, WIN_MAIN_URLBAR_HEIGHT, hwnd, (HMENU)ID_URL_BAR, NULL, NULL
             );
 
             // Subclass the URL bar to intercept key events
@@ -39,21 +50,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
             // Create a font for the URL bar
             hFont = CreateFont(
-                16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                WIN_MAIN_URL_FONT_CHEIGHT, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                 DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                 DEFAULT_QUALITY, DEFAULT_PALETTE, "Arial"
             );
             SendMessage(urlBar, WM_SETFONT, (WPARAM)hFont, TRUE);
 
             // Create brushes for background colors
-            hBrush = CreateSolidBrush(RGB(240, 240, 240)); // Off-white background for rectangle
-            hBgBrush = CreateSolidBrush(RGB(255, 255, 255)); // White background for the URL bar
+            hBrush = CreateSolidBrush(WIN_MAIN_GRAY); // Off-white background for rectangle
+            hBgBrush = CreateSolidBrush(WIN_MAIN_WHITE); // White background for the URL bar
             break;
 
         case WM_CTLCOLOREDIT:
             if ((HWND)lParam == urlBar) {
                 HDC hdc = (HDC)wParam;
-                SetBkColor(hdc, RGB(255, 255, 255)); // Set background color to white
+                SetBkColor(hdc, WIN_MAIN_WHITE); // Set background color to white
                 return (INT_PTR)hBgBrush; // Set brush for the background
             }
             break;
@@ -74,7 +85,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             RECT rect;
             rect.left = 0; // Padding from left
             rect.top = 0;  // Padding from top
-            rect.right = 800; // Set to window width
+            rect.right = WIN_MAIN_INIT_WIDTH; // Set to window width
             rect.bottom = WIN_MAIN_BASEBAR_HEIGHT; // URL bar height
             FillRect(hdc, &rect, hBrush); // Fill with off-white color
 
@@ -89,8 +100,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             if (urlBar) {
                 RECT clientRect;
                 GetClientRect(hwnd, &clientRect);
-                int centerX = (clientRect.right - 600) / 2; // Centering the URL bar
-                SetWindowPos(urlBar, NULL, centerX, 10, 600, 25, SWP_NOZORDER);
+                int centerX = (clientRect.right - WIN_MAIN_URLBAR_INIT_WIDTH) / 2; // Centering the URL bar
+                SetWindowPos(urlBar, NULL, centerX, WIN_MAIN_URLBAR_PADDING_X, WIN_MAIN_URLBAR_INIT_WIDTH, WIN_MAIN_URLBAR_PADDING_Y, SWP_NOZORDER);
             }
             break;
         }
@@ -117,7 +128,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     HWND hwnd = CreateWindowEx(
         0, CLASS_NAME, "My Browser Window", WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
+        CW_USEDEFAULT, CW_USEDEFAULT, WIN_MAIN_INIT_WIDTH, WIN_MAIN_URLBAR_INIT_WIDTH,
         NULL, NULL, hInstance, NULL
     );
 
@@ -130,8 +141,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if (urlBar) {
         RECT clientRect;
         GetClientRect(hwnd, &clientRect);
-        int centerX = (clientRect.right - 600) / 2; // Centering the URL bar
-        SetWindowPos(urlBar, NULL, centerX, 10, 600, 25, SWP_NOZORDER);
+        int centerX = (clientRect.right - WIN_MAIN_URLBAR_INIT_WIDTH) / 2; // Centering the URL bar
+        SetWindowPos(urlBar, NULL, centerX, WIN_MAIN_URLBAR_PADDING_X, WIN_MAIN_URLBAR_INIT_WIDTH, WIN_MAIN_URLBAR_PADDING_Y, SWP_NOZORDER);
     }
 
     MSG msg = { 0 };
