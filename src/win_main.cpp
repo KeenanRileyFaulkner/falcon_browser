@@ -8,7 +8,7 @@ LRESULT CALLBACK URLBarProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     if (uMsg == WM_KEYDOWN && wParam == VK_RETURN) {
         char url[256];
         GetWindowText(hwnd, url, sizeof(url));
-        printf("Loading URL %s\n", url);  // Replace with actual loading logic
+        printf("Loading URL: %s\n", url);  // Replace with actual loading logic
         return 0;  // Prevent further processing (avoids beep)
     }
     return CallWindowProc((WNDPROC)GetWindowLongPtr(hwnd, GWLP_USERDATA), hwnd, uMsg, wParam, lParam);
@@ -58,21 +58,24 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             }
             break;
 
+        case WM_ERASEBKGND: {
+            HDC hdc = (HDC)wParam;
+            RECT clientRect;
+            GetClientRect(hwnd, &clientRect);
+            FillRect(hdc, &clientRect, hBrush); // Fill with off-white color
+            return 1; // Prevent further erasing
+        }
+
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
 
-            // Fill the entire client area with off-white color
-            RECT clientRect;
-            GetClientRect(hwnd, &clientRect);
-            FillRect(hdc, &clientRect, hBrush); // Fill the entire client area
-
             // Draw the off-white rectangle behind the URL bar
             RECT rect;
-            rect.left = 0;              // Fill the entire width
-            rect.top = 0;               // Start from the top
-            rect.right = clientRect.right; // Fill to the right edge
-            rect.bottom = WIN_MAIN_BASEBAR_HEIGHT; // Height for the base bar
+            rect.left = 0; // Padding from left
+            rect.top = 0;  // Padding from top
+            rect.right = 800; // Set to window width
+            rect.bottom = WIN_MAIN_BASEBAR_HEIGHT; // URL bar height
             FillRect(hdc, &rect, hBrush); // Fill with off-white color
 
             EndPaint(hwnd, &ps);
@@ -80,14 +83,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         }
 
         case WM_SIZE: {
-            // Reposition the URL bar when the window is resized
+            // Redraw the background on resize
+            InvalidateRect(hwnd, NULL, TRUE);
+            // Center the URL bar on resize
             if (urlBar) {
                 RECT clientRect;
                 GetClientRect(hwnd, &clientRect);
-                int width = clientRect.right - clientRect.left - 20; // 10 padding on each side
-                SetWindowPos(urlBar, NULL, (clientRect.right - width) / 2, 10, width, 25, SWP_NOZORDER);
+                int centerX = (clientRect.right - 600) / 2; // Centering the URL bar
+                SetWindowPos(urlBar, NULL, centerX, 10, 600, 25, SWP_NOZORDER);
             }
-            InvalidateRect(hwnd, NULL, TRUE); // Force a repaint to update the background
             break;
         }
 
@@ -120,6 +124,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if (hwnd == NULL) return 0;
 
     ShowWindow(hwnd, nCmdShow);
+
+    // Center the URL bar initially
+    HWND urlBar = FindWindowEx(hwnd, NULL, "EDIT", NULL);
+    if (urlBar) {
+        RECT clientRect;
+        GetClientRect(hwnd, &clientRect);
+        int centerX = (clientRect.right - 600) / 2; // Centering the URL bar
+        SetWindowPos(urlBar, NULL, centerX, 10, 600, 25, SWP_NOZORDER);
+    }
 
     MSG msg = { 0 };
     while (GetMessage(&msg, NULL, 0, 0)) {

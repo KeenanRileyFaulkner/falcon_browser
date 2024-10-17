@@ -1,5 +1,3 @@
 @echo off
-if not exist build (
-    mkdir build
-)
-gcc src/win_main.c -o build/browser.exe -lgdi32
+mkdir build
+g++ src/win_main.cpp -o build/browser.exe -lgdi32
